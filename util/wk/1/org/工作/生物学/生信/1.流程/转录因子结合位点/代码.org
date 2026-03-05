@@ -1,0 +1,122 @@
+* meme
+** 修正._2_02_16_105827
+# 修改时间：2026-02-16 13:14:58
+#+BEGIN_SRC R
+  \( fp, fp2 = .wk[[ 'file_name']]( fp, append = 'fixed')) { #
+    if( ! file.exists( fp2)) {
+      pwm <- readLines( fp)
+      { # @_2/02/12@ 若nsites=null则删nsites=null、E=null
+        i <- .wk[[ 'grep']]( pwm, '(?i)^letter-probability matrix: ')
+        i <- i[ ! .wk[[ 'grepl']]( pwm[ i], '\\bnsites= *\\d+')]
+        pwm[ i] <- .wk[[ 'sub']]( pwm[ i], 'nsites=null')
+        pwm[ i] <- .wk[[ 'sub']]( pwm[ i], 'E=null')
+        pwm[ i] <- .wk[[ 'sub']]( pwm[ i], ' +$')
+        if(0){
+          .wk[[ 'with']]( .wk[[ 'grep']]( pwm, 'OsbZIP69'), {
+            pwm[ seq( x1, x1 + 9)]
+          })
+        }
+      }
+      { # @_2/02/13@ 把概率>1的pwm删掉
+        pwm_block <- .wk[[ 'seqCut']]( pwm, c( 1, .wk[[ 'grep']]( pwm, '(?i)^MOTIF ')))
+        pwm_block <- lapply( pwm_block, function( pwm1) {
+          if( length( .wk[[ 'grep']]( pwm1, '(?i)^MOTIF '))) {
+            row_start <- .wk[[ 'grep']]( pwm1, '(?i)^letter-probability matrix: ') + 1
+            m <- pwm1[ .wk[[ 'number_block']]( .wk[[ 'grep']]( pwm1, '\\d+ *\t'))[[ as.character( row_start)]]]
+            m <- .wk[[ 'gsub']]( m, ' ')
+            m <- .wk[[ 'dt_fread']]( text = m)
+            if( ! any( .wk[[ 'colMax']]( m)[ 1:4] > 1))
+              pwm1
+          } else
+            pwm1
+        })
+        # sum( sapply( pwm_block, length) == 0) # 1
+        pwm <- unlist( pwm_block)
+      }
+      .wk[[ 'dt_fwrite']]( list( pwm), file = fp2, append = 0)
+    }
+    fp2
+  }
+#+END_SRC
+** 提取pwm号._2_02_16_105336
+# 修改时间：2026-02-16 13:57:20
+#+BEGIN_SRC R
+  \( fp) {
+    meme <- readLines( fp)
+    r <- .wk[[ 'grepV']]( meme, '(?i)^MOTIF ') # 'MOTIF LOC_Os01g03720 MP00216'
+    r <- .wk[[ 'sub']]( r, '(?i)^MOTIF +')
+    r <- .wk[[ 're']]( r, '[^ ]+')
+    if(0){
+      anyDuplicated( r)
+      a <- .wk[[ 're']]( r, '[^ ]+$')
+      cat( r[ a %in% a[ anyDuplicated( a)]], sep = '\n')
+      cat( .wk[[ 'grepV']]( meme, paste0( '(?i)^MOTIF .*', r[ anyDuplicated( r)])), sep = '\n')
+      lapply( .wk[[ 'grep']]( meme, 'LOC_Os05g36160 '), function( i) {
+        meme[ seq( i, i + 20)]
+      })
+    }
+    unique( r)
+  }
+#+END_SRC
+* fimo
+** fimo_fp._2_02_16_121806
+#+BEGIN_SRC R
+  function() {
+    .wk[[ 'get_fun']]( '用conda/找软件._1_07_12_091131')( 'fimo')
+  }
+#+END_SRC
+** 处理meme文件._2_02_16_121520
+#+BEGIN_SRC r
+  # 修改时间：2026-02-28 17:35:33
+  local({
+    fp2_fun <- function( pwm) {
+      .wk[[ 'sub']]( basename( pwm), '(\\.txt)?$', '.fimo_out.tsv.gz')
+    }
+    function( meme_fp, fa_fp, fimo_fp = .wk[[ 'get_fun']]( 'fimo/fimo_fp._2_02_16_121806')(), folder2 = '.', best = 1) {
+      #.wk[[ 'sys']](fimo_fp)
+      .wk[[ 'with_wd']]( folder2, {
+        if( length( meme_fp) == 1) { # pwm都在1个文件
+          pwm_id <- .wk[[ 'get_fun']]( 'meme/提取pwm号._2_02_16_105336')( meme_fp)
+          .wk[[ 'mclapply']]( pwm_id, function( pwm_id) {
+            fp2 <- fp2_fun( pwm_id)
+            if( ! file.exists( fp2))
+              .wk[[ 'sys']](
+                c( .wk[[ 'sys_safe_file_path']]( fimo_fp),
+                  '--text',
+                  if( best)
+                    '--max-strand',
+                  '--motif', .wk[[ 'str_quote']]( pwm_id), # 若不止1个，则只用第1个，因为后面的会因为管道不能重用而中断 @_2/02/16@
+                  .wk[[ 'sys_safe_file_path']]( meme_fp),
+                  .wk[[ 'sys_cat_text']]( fa_fp, as_file = 1),
+                  #'| cut -f3-', # 有的结果的前2列是'motif_id'、'motif_alt_id'
+                  '| gzip >', .wk[[ 'sys_safe_file_path']]( fp2)))
+            {}
+          })
+          return()
+        }
+        if( length( meme_fp) > 1) { # 每个meme文件有1个pwm
+          pwm_n <- sapply( meme_fp, function( x) {
+            pwm_id <- .wk[[ 'get_fun']]( 'meme/提取pwm号._2_02_16_105336')( x)
+            length( pwm_id)
+          })
+          if( ! all( pwm_n == 1))
+            stop( '_2_02_16_124627')
+          .wk[[ 'mclapply']](
+            meme_fp,
+            function( meme_fp) {
+              fp2 <- fp2_fun( meme_fp)
+              if( ! file.exists( fp2))
+                .wk[[ 'sys']](
+                  c( .wk[[ 'sys_safe_file_path']]( fimo_fp),
+                    '--text',
+                    if( best)
+                      '--max-strand',
+                    .wk[[ 'sys_safe_file_path']]( meme_fp),
+                    .wk[[ 'sys_cat_text']]( fa_fp, as_file = 1)))
+              {}}
+          )
+        }
+      })
+    }
+  })
+#+END_SRC

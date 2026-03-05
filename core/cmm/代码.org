@@ -1,0 +1,78 @@
+* target_region_file.folder._2_01_19_220213
+# 修改时间：2026-02-10 14:17:26
+#+BEGIN_SRC R
+  \( x) {
+    .wk[[ 'sub']]( basename( x), '\\.fa(\\.gz)?$')
+  }
+  if(0){
+    .wk[[ 'get_fun']]( 'target_region_file.folder._2_01_19_220213')
+  }
+#+END_SRC
+* 随机选50个pwm._2_01_19_213603
+# 修改时间：2026-02-10 14:17:26
+#+BEGIN_SRC R
+  \() { #
+    wd <- .wk[[ 'task_folder']]( '_2_01_19_213603')
+    .wk[[ 'with_wd']]( wd, {
+      .wk[[ 'eval_lazy']]({
+        target_region_file <- .wk[[ 'get_fun']]( '目标区域/_1_07_11_095820')() # <<_1_08_11_221531>>
+        pwm_db <- {
+          a <- lapply( target_region_file, function( x) {
+            x <- target_region_file.folder( x)
+            x <- .wk[[ 'list_file']]( x, F = 0)
+            .wk[[ 'sub']]( x, '(?i)\\.fimo_out\\.tsv\\.gz$')
+          })
+          sort( unique( unlist( a)))
+        }
+        sort( sample( pwm_db, 50))
+      }, file = 'ranmdom50pwm.rd')
+    })
+  }
+#+END_SRC
+* 水稻
+** pwm._2_02_12_164718
+# 修改时间：2026-02-12 17:18:43
+#+BEGIN_SRC R
+  function() {
+    .wk[[ 'get_fun']]( 'pwm/_1_07_14_163254')( org = '水稻')
+  }
+#+END_SRC
+*** 修._2_02_12_001129
+#+BEGIN_SRC R
+  function() { #
+    # 修改时间：2026-02-22 20:32:38
+    pwm_fp <- .wk[[ 'get_fun']]( 'pwm._2_02_12_164718')()
+    .wk[[ 'get_fun']]( 'meme/修正._2_02_16_105827')( fp = pwm_fp)
+  }
+  .wk[[ 'sys_less']]( .wk[[ 'get_fun']]( '修pwm._2_02_12_001129')())
+#+END_SRC
+** 基因组._2_02_16_141026
+# 修改时间：2026-02-16 14:55:48
+#+BEGIN_SRC R
+  function() {
+    wd <- .wk[[ 'task_folder']]( '水稻/基因组._2_02_16_141026')
+    if(0){
+      .wk[[ 'with_wd']]( file.path( wd, '水稻基因组'), {
+        .wk[[ 'sys']]( c( 'unzip', .wk[[ 'sys_safe_file_path']]( '华占.zip')))
+      })
+      .wk[[ 'with_wd']]( file.path( wd, '水稻基因组', '华占'), {
+        .wk[[ 'base_browser']]( '_2_02_16_173934')
+
+        .wk[[ 'sys']](
+          c( .wk[[ 'get_fun']]( '用conda/找软件._1_07_12_091131')( 'bgzip'),
+            '-@8',
+            'Huazhan.genome.fasta'))
+        .wk[[ 'sys']](
+          c( .wk[[ 'get_fun']]( '用conda/找软件._1_07_12_091131')( 'samtools'),
+            'faidx',
+            'Huazhan.genome.fasta.gz'))
+
+        .wk[[ 'sys_ls']]()
+        for( fp1 in c( 'HZ.gtf', 'Huazhan.pep.fa', 'Huazhan.gff3'))
+          .wk[[ 'sys']]( c( 'gzip', .wk[[ 'sys_safe_file_path']]( fp1)))
+      })
+    }
+    file.path( wd, '水稻基因组', '华占')
+  }
+  .wk[[ 'file_rsync']]( '~/d/下载/华占.zip', '~/work/xm/_1/06/24/230251/cmm/水稻基因组', direction = 'out', dry = 0)
+#+END_SRC
